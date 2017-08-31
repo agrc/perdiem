@@ -17,7 +17,15 @@ RECORD_CATEGORIES = {
 
 
 RATES_2017 = 'rates_2017.json'
+RATE_YEAR_PATHS = {
+    '2017': 'rates_2017.json',
+    '2016': 'rates_2016.json'
+}
 TABLES_2017 = 'gsa_tables_2017.json'
+TABLE_YEAR_PATHS = {
+    '2017': 'gsa_tables_2017.json',
+    '2016': 'gsa_tables_2016.json'
+}
 
 RATE_DATE_FORMAT = '%Y-%m'
 
@@ -51,12 +59,12 @@ def parse_gsa_table(rate_key, tbody_text):
         record = make_table_record(rate_key, tbody_text)
     elif len(tbody_text) == 30:
         record1 = make_table_record(rate_key, tbody_text[:15])
-        record2 = make_table_record(rate_key, tbody_text[:30])
-        if sum(record1['rates'].values()) > sum(record2['rates'].values()):
+        record2 = make_table_record(rate_key, tbody_text[15:])
+        if sum(record1[rate_key]['rates'].values()) > sum(record2[rate_key]['rates'].values()):
             record = record1
         else:
             record = record2
-        record['category'] = RECORD_CATEGORIES['TWO_TABLE']
+        record[rate_key]['category'] = RECORD_CATEGORIES['TWO_TABLE']
 
     return record
 
@@ -96,6 +104,7 @@ def get_perdiem_table(state, city, zipcode, previous_tables, gsa_multitables):
 
     rate_key = get_rate_key(state, city, zipcode)
     if rate_key in previous_tables:
+        previous_tables[rate_key]
         return previous_tables[rate_key]
     elif rate_key in gsa_multitables:
         return None
@@ -213,8 +222,9 @@ def log_error(id_num, category):
         writer = csv.writer(errors)
         writer.writerow((id_num, category))
 
-def get_records_from_table(data, previous_tables):
-    gsa_multitables = load_tables(TABLES_2017)
+def get_records_from_table(data, previous_tables, fiscal_year):
+    global TABLE_YEAR_PATHS
+    gsa_multitables = load_tables(TABLE_YEAR_PATHS[fiscal_year])
     date_string = '%m/%d/%Y'
     with open(data, 'rb') as stays:
         reader = csv.DictReader(stays)
@@ -232,8 +242,8 @@ def get_records_from_table(data, previous_tables):
                 log_error(id_num, 'state not found')
                 continue
             try:
-                fiscal_year = get_fiscal_year(checkin_date)
-                if fiscal_year != '2017':
+                stay_year = get_fiscal_year(checkin_date)
+                if stay_year != fiscal_year:
                     continue
             except ValueError:
                 print 'BAD CHECKIN', id_num, checkin_date
@@ -258,8 +268,10 @@ def get_records_from_table(data, previous_tables):
         # print rates
 
 
-def get_records_from_lookup(data, previous_tables, output_csv):
+def get_records_from_lookup(data, previous_tables, output_csv, fiscal_year):
     date_string = '%m/%d/%Y'
+    non_2017 = 0
+    non_twotable = 0
     with open(data, 'rb') as stays, open(output_csv, 'wb') as output:
         reader = csv.DictReader(stays)
         writer = csv.writer(output)
@@ -274,11 +286,12 @@ def get_records_from_lookup(data, previous_tables, output_csv):
             try:
                 state = lookup_state(state)
             except KeyError:
-                print 'NOT FOUND', id_num, state, zipcode
+                # print 'NOT FOUND', id_num, state, zipcode
                 continue
             try:
-                fiscal_year = get_fiscal_year(checkin_date)
-                if fiscal_year != '2017':
+                stay_year = get_fiscal_year(checkin_date)
+                if stay_year != fiscal_year:
+                    non_2017 += 1
                     continue
             except ValueError:
                 print 'BAD CHECKIN', id_num, checkin_date
@@ -291,12 +304,14 @@ def get_records_from_lookup(data, previous_tables, output_csv):
 
             rate_key = get_rate_key(state, city, zip1)
             if rate_key not in previous_tables:
+                non_twotable += 1
                 continue
             rates = previous_tables[rate_key]['rates']
             if rate_date not in rates:
                 print 'bad rate date', rate_key, rate_date
             else:
                 writer.writerow([row[field] for field in reader.fieldnames] + [rates[rate_date]])
+    print non_2017, non_twotable
 
 
 def remove_completed(stay_csv, completed_csv, shared_id_field, output_csv):
@@ -318,10 +333,11 @@ def remove_completed(stay_csv, completed_csv, shared_id_field, output_csv):
 
 if __name__ == '__main__':
     data = 'stays/non_utah_round2.csv'
-    previous_tables = load_tables()
-    get_records_from_table(data, previous_tables)
-    # get_records_from_lookup(data, previous_tables, 'results/temp.csv')
-    # remove_completed(data, 'results/non_utah_easy.csv', 'ID', 'stays/non_utah_round2.csv')
+    year = '2017'
+    previous_tables = load_tables(RATE_YEAR_PATHS[year])
+    get_records_from_table(data, previous_tables, year)
+    # get_records_from_lookup(data, previous_tables, 'results/non_utah_2table.csv', year)
+    # remove_completed(data, 'results/non_utah_2table.csv', 'ID', 'stays/non_utah_2016.csv')
 
     # state, city, zip_code = ('Pennsylvania', 'PITTSBURGH', '15524')
     # record = get_perdiem_table(state, city, zip_code, previous_tables)
