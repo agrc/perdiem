@@ -66,7 +66,7 @@ def create_rate_areas(perdiem_csv):
 
 def get_rate_for_stays(city_areas, stay_csv, output_csv):
     date_string = '%m/%d/%Y'
-    dnf = 0
+    found = 0
     with open(stay_csv, 'rb') as stays, open(output_csv, 'wb') as output:
         reader = csv.DictReader(stays)
         writer = csv.writer(output)
@@ -76,23 +76,24 @@ def get_rate_for_stays(city_areas, stay_csv, output_csv):
             checkin = datetime.strptime(row['CHECKIN_DATE'].strip(), date_string)
             id_num = row['ID']
             if city not in city_areas:
-                pass
-                # print city, 'not found'
+                print city, 'not found'
+                writer.writerow([row[field] for field in reader.fieldnames] + [70])
+                found += 1
             else:
                 rate = city_areas[city].get_rate(checkin)
                 if rate is None:
-                    pass
                     print city, 'date not found', checkin
+                    writer.writerow([row[field] for field in reader.fieldnames] + [70])
+                    found += 1
                 else:
-                    dnf += 1
                     writer.writerow([row[field] for field in reader.fieldnames] + [rate])
                     # print city, rate
-    print dnf
+    print found
 
 
 if __name__ == '__main__':
     perdiem_csv = r'stays/utah_perdiems.csv'
-    utah_stay_csv = r'stays/utah_stays.csv'
+    utah_stay_csv = r'stays/utah_defualt_stays.csv'
     city_areas = create_rate_areas(perdiem_csv)
-    get_rate_for_stays(city_areas, utah_stay_csv, 'results/utah_draft.csv')
+    get_rate_for_stays(city_areas, utah_stay_csv, 'results/utah_defualts.csv')
     # print len(city_areas)

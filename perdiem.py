@@ -126,7 +126,7 @@ def get_perdiem_table(state, city, zipcode, previous_tables, gsa_multitables, fi
         'perdiemSearchVO.city': city.lower(),
         'perdiemSearchVO.zip': zipcode
     }
-
+    state = lookup_state(state)
     rate_key = get_rate_key(state, city, zipcode)
     if rate_key in previous_tables:
         previous_tables[rate_key]
@@ -151,7 +151,10 @@ def get_perdiem_table(state, city, zipcode, previous_tables, gsa_multitables, fi
 
         print 'Error:', error_text
         return None
-    tbody_text = [e.get_text() for e in page.find_all('tbody')[0].find_all('td')]
+    try:
+        tbody_text = [e.get_text() for e in page.find_all('tbody')[0].find_all('td')]
+    except IndexError:
+        import pdb; pdb.set_trace()
     try:
         table_record = parse_gsa_table(rate_key, tbody_text, fiscal_year)
     except ValueError:
@@ -280,9 +283,9 @@ def get_records_from_table(data, previous_tables, fiscal_year):
             if ZIP_MATCHER.match(zipcode) is not None:
                 zip1 = zipcode.split('-')[0].strip()
 
-            record = get_perdiem_table(state.strip(), city, zip1, previous_tables, gsa_multitables, fiscal_year)
+            record = get_perdiem_table(row['STATE'].strip(), city, zip1, previous_tables, gsa_multitables, fiscal_year)
             if record is None:
-                record = get_perdiem_table(state.strip(), city, '', previous_tables, gsa_multitables, fiscal_year)
+                record = get_perdiem_table(row['STATE'].strip(), city, '', previous_tables, gsa_multitables, fiscal_year)
                 if record is None:
                     # print 'bad bad bad', row
                     # log_error(id_num, 'service error')
@@ -384,7 +387,7 @@ def _transform_rate_dates(rates_json, temp_rates_json):
 
 
 def _combine_result_tables(output_csv):
-    tables = ['non_utah_2015.csv', 'non_utah_2016.csv', 'non_utah_2017.csv', 'utah_draft.csv']
+    tables = ['non_utah_2015.csv', 'non_utah_2016.csv', 'non_utah_2017.csv', 'utah_draft.csv', 'utah_defualts.csv']
     result_folder = 'results'
 
     fields = None
@@ -429,14 +432,13 @@ def check_utah_cities():
 
 
 if __name__ == '__main__':
-    check_utah_cities()
-    data = 'stays/non_utah_2015.csv'
-    year = '2015'
-    _combine_result_tables('all_stays_draft.csv')
-    # previous_tables = load_tables(RATE_YEAR_PATHS[year])
-    # get_records_from_table(data, previous_tables, year)
+    data = 'stays/non_utah_other.csv'
+    year = '2017'
+    _combine_result_tables('all_stays_final.csv')
+    previous_tables = load_tables(RATE_YEAR_PATHS[year])
+    get_records_from_table(data, previous_tables, year)
     # get_records_from_lookup(data, previous_tables, 'results/non_utah_2015.csv', year)
-    # remove_completed(data, 'results/non_utah_2015.csv', 'ID', 'stays/non_utah_other.csv')
+    # remove_completed('stays/utah_stays.csv', 'results/utah_draft.csv', 'ID', 'stays/utah_defualt_stays.csv')
 
     # state, city, zip_code = ('Pennsylvania', 'PITTSBURGH', '15524')
     # record = get_perdiem_table(state, city, zip_code, previous_tables)
