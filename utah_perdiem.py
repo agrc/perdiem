@@ -99,8 +99,8 @@ def get_rate_for_stays(city_areas, stay_csv, output_csv):
                 else:
                     row['PERDIEM'] = int(float(rate))
                     writer.writerow([row[field] for field in reader.fieldnames])
-                    # print city, rate
-    for  not_found_city,msg in not_found_cities.items():
+
+    for not_found_city, msg in not_found_cities.items():
         print '{} {}'.format(not_found_city, msg)
     print 'Total not found:', not_found
 
