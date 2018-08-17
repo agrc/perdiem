@@ -66,34 +66,48 @@ def create_rate_areas(perdiem_csv):
 
 def get_rate_for_stays(city_areas, stay_csv, output_csv):
     date_string = '%m/%d/%Y'
-    found = 0
+    not_found = 0
+    not_found_cities = {}
+    default_rate = 70
     with open(stay_csv, 'rb') as stays, open(output_csv, 'wb') as output:
         reader = csv.DictReader(stays)
         writer = csv.writer(output)
-        writer.writerow(reader.fieldnames + ['perdiem'])
+        if 'PERDIEM' not in reader.fieldnames:
+            writer.writerow(reader.fieldnames + ['PERDIEM'])
+        else:
+            writer.writerow(reader.fieldnames)
         for row in reader:
+            if row['STATE'].lower() != 'ut':
+                continue
             city = row['CITY'].lower().replace('city', '').strip()
             checkin = datetime.strptime(row['CHECKIN_DATE'].strip(), date_string)
-            id_num = row['ID']
+            id_num = row['ROW_ID']
             if city not in city_areas:
-                print city, 'not found'
-                writer.writerow([row[field] for field in reader.fieldnames] + [70])
-                found += 1
+                # print city, 'not found'
+                not_found_cities[city] = 'not found'
+                row['PERDIEM'] = default_rate
+                writer.writerow([row[field] for field in reader.fieldnames])
+                not_found += 1
             else:
                 rate = city_areas[city].get_rate(checkin)
                 if rate is None:
-                    print city, 'date not found', checkin
-                    writer.writerow([row[field] for field in reader.fieldnames] + [70])
-                    found += 1
+                    # print city, 'date not not_found', checkin
+                    not_found_cities[city] = 'date not not_found ' + str(checkin)
+                    row['PERDIEM'] = default_rate
+                    writer.writerow([row[field] for field in reader.fieldnames])
+                    not_found += 1
                 else:
-                    writer.writerow([row[field] for field in reader.fieldnames] + [rate])
+                    row['PERDIEM'] = int(float(rate))
+                    writer.writerow([row[field] for field in reader.fieldnames])
                     # print city, rate
-    print found
+    for  not_found_city,msg in not_found_cities.items():
+        print '{} {}'.format(not_found_city, msg)
+    print 'Total not found:', not_found
 
 
 if __name__ == '__main__':
     perdiem_csv = r'stays/utah_perdiems.csv'
-    utah_stay_csv = r'stays/utah_defualt_stays.csv'
+    utah_stay_csv = r'stays/All_Stays_2018Q2.csv'
     city_areas = create_rate_areas(perdiem_csv)
-    get_rate_for_stays(city_areas, utah_stay_csv, 'results/utah_defualts.csv')
+    get_rate_for_stays(city_areas, utah_stay_csv, 'results/utah_2018_q2.csv')
     # print len(city_areas)

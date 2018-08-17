@@ -1,4 +1,7 @@
 {
+    "alaska:anchorage": [], 
+    "alaska:anchorage99501": [], 
+    "alaska:anchorage99508": [], 
     "colorado:bogota": [
         "Standard Rate", 
         "Applies for all locations without specified rates", 
@@ -241,6 +244,14 @@
         "$134", 
         "$74"
     ], 
+    "hawaii:honolulu": [], 
+    "hawaii:honolulu96815": [], 
+    "hawaii:kailua kona": [], 
+    "hawaii:kailua kona96740": [], 
+    "hawaii:kapolei": [], 
+    "hawaii:kapolei96707": [], 
+    "hawaii:kihei": [], 
+    "hawaii:kihei96753": [], 
     "north carolina:chapel hill27517": [
         "Chapel Hill", 
         "Orange", 
@@ -381,5 +392,12 @@
         "$126", 
         "$126", 
         "$64"
-    ]
+    ], 
+    "puerto rico:san juan": [], 
+    "puerto rico:san juan00907": [], 
+    "virgin islands:st croix": [], 
+    "virgin islands:st croix00850": [], 
+    "virgin islands:st thomas": [], 
+    "virgin islands:st thomas00802": [], 
+    "virgin islands:st thomas00804": []
 }

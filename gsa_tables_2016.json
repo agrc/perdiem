@@ -1,4 +1,10 @@
 {
+    "alaska:anchorage": [], 
+    "alaska:anchorage99501": [], 
+    "alaska:anchorage99503": [], 
+    "alaska:anchorage99518": [], 
+    "alaska:girdwood": [], 
+    "alaska:girdwood99587": [], 
     "colorado:bogota": [
         "Standard Rate", 
         "Applies for all locations without specified rates", 
@@ -302,5 +308,10 @@
         "$122", 
         "$122", 
         "$54"
-    ]
+    ], 
+    "hawaii:honolulu": [], 
+    "hawaii:honolulu96813": [], 
+    "hawaii:honolulu96815": [], 
+    "hawaii:honolulu96819": [], 
+    "virgin islands:melbourne": []
 }
