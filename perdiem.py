@@ -72,6 +72,31 @@ FISCAL_YEARS = {
 }
 
 
+class Gsa_Key_Rate(object):
+    """Store rate information from a GSA defined location."""
+
+    def __init__(self, county, destination, rates):
+        """ctor."""
+        self.county = county
+        self.destination = destination
+        self.rates = rates
+
+    @staticmethod
+    def decode_gsa_rate(dct):
+        """Decode stored GSA rates for locations."""
+        if 'county' in dct:
+            return Gsa_Key_Rate(dct['county'], dct['destination'], dct['rates'])
+        return dct
+
+    @staticmethod
+    def load_location_rates(json_path):
+        """Load GSA location rates into an object."""
+        with open(json_path, 'r') as json_file:
+            rate_tables = json.load(json_file, object_hook=Gsa_Key_Rate.decode_gsa_rate)
+
+        return rate_tables
+
+
 def save_tables(table, json_path=RATES_2017):
     with open(json_path, 'w') as f_out:
         f_out.write(json.dumps(table, sort_keys=True, indent=4))
@@ -124,17 +149,19 @@ def get_rate_key(state, city, zipcode):
     return rate_key
 
 
+def request_gsa_destination(state, city, zipcode, fiscal_year):
+    gsa_url = "https://inventory.data.gov/api/action/datastore_search"
+    payload = {
+        'resource_id': '8ea44bc4-22ba-4386-b84c-1494ab28964b',
+        'limit': 20,
+        'filters': '{{"FiscalYear":{},"Zip":{}}}'.format(fiscal_year, zipcode)
+    }
+    r = requests.get(gsa_url, params=payload)
+    print(r.json())
+
 def get_perdiem_table(state, city, zipcode, previous_tables, gsa_multitables, fiscal_year):
     global TABLE_YEAR_PATHS, RATE_YEAR_PATHS
     # https://www.gsa.gov/travel/plan-book/per-diem-rates/per-diem-rates-lookup/?action=perdiems_report&state=AL&fiscal_year=2017&zip=&city=mobile
-    apiCheck_Url = "https://www.gsa.gov/travel/plan-book/per-diem-rates/per-diem-rates-lookup"
-    payload = {
-        'action': 'perdiems_report',
-        'state': state.upper(),
-        'fiscal_year': fiscal_year,
-        'zip': zipcode,
-        'city': city.lower(),
-    }
     state = lookup_state(state)
     rate_key = get_rate_key(state, city, zipcode)
     if rate_key in previous_tables:
@@ -144,14 +171,22 @@ def get_perdiem_table(state, city, zipcode, previous_tables, gsa_multitables, fi
     #     return None
 
     time.sleep(random.uniform(2.0, 5.0))
+    apiCheck_Url = "https://www.gsa.gov/travel/plan-book/per-diem-rates/per-diem-rates-lookup"
+    payload = {
+        'action': 'perdiems_report',
+        'state': state.upper(),
+        'fiscal_year': fiscal_year,
+        'zip': zipcode,
+        'city': city.lower(),
+    }
     r = requests.get(apiCheck_Url, params=payload)
-    print r.url
+    print(r.url)
     page = None
 
     try:
         page = BeautifulSoup(r.content, 'html.parser')
     except:
-        print "Error: Service did not respond."
+        print("Error: Service did not respond.")
     error_divs = page.find_all('div', {'class': 'error-text-body'})
     if len(error_divs) > 0:
         error_tag = error_divs[0].find_all('h3')
@@ -159,7 +194,7 @@ def get_perdiem_table(state, city, zipcode, previous_tables, gsa_multitables, fi
         if error_tag is not None and type(error_tag) == element.ResultSet:
             error_text = error_tag[0].text
 
-        print 'Error:', error_text
+        print('Error:', error_text)
         return None
     try:
         cells = []
@@ -167,15 +202,15 @@ def get_perdiem_table(state, city, zipcode, previous_tables, gsa_multitables, fi
             cells.extend(tr.find_all('td'))
         tbody_text = [e.get_text() for e in cells]
         if len(tbody_text) > 30:
-            print 'More than two tables. Cell count: {}'.format(len(tbody_text))
+            print('More than two tables. Cell count: {}'.format(len(tbody_text)))
             return None
     except IndexError:
-        print 'Odd page on:', r.url
+        print('Odd page on:', r.url)
         return None
     try:
         table_record = parse_gsa_table(rate_key, tbody_text, fiscal_year)
     except ValueError:
-        print 'MakeTableIssue', rate_key
+        print('MakeTableIssue', rate_key)
         return None
 
     if table_record is None:
@@ -296,7 +331,7 @@ def get_records_from_table(data, previous_tables, fiscal_year):
                     continue
 
             except KeyError:
-                print 'NOT FOUND', id_num, state, zipcode
+                print('NOT FOUND', id_num, state, zipcode)
                 log_error(id_num, 'state not found')
                 continue
 
@@ -305,7 +340,7 @@ def get_records_from_table(data, previous_tables, fiscal_year):
                 if stay_year != fiscal_year:
                     continue
             except ValueError:
-                print 'BAD CHECKIN', id_num, checkin_date
+                print('BAD CHECKIN', id_num, checkin_date)
                 log_error(id_num, 'checkin_date format error')
                 continue
             # checkin_date = datetime.strftime(datetime.strptime(checkin_date, date_string), RATE_DATE_FORMAT)
@@ -346,7 +381,7 @@ def get_records_from_lookup(data, previous_tables, output_csv, fiscal_year):
                     continue
 
             except KeyError:
-                print 'NOT FOUND', id_num, state, zipcode
+                print('NOT FOUND', id_num, state, zipcode)
                 continue
             try:
                 stay_year = get_fiscal_year(checkin_date)
@@ -355,7 +390,7 @@ def get_records_from_lookup(data, previous_tables, output_csv, fiscal_year):
                         non_year += 1
                     continue
             except ValueError:
-                print 'BAD CHECKIN', id_num, checkin_date
+                print('BAD CHECKIN', id_num, checkin_date)
                 continue
             rate_date = datetime.strftime(datetime.strptime(checkin_date, date_string), RATE_DATE_FORMAT)
             city, zipcode = (city, zipcode)
@@ -372,13 +407,13 @@ def get_records_from_lookup(data, previous_tables, output_csv, fiscal_year):
                 else:
                     rate_key = zipless_key
             rates = previous_tables[rate_key]['rates']
-            # print id_num, state, city, zipcode, checkin_date
+            # print(id_num, state, city, zipcode, checkin_date)
             if rate_date not in rates:
-                print 'bad rate date', rate_key, rate_date
+                print('bad rate date', rate_key, rate_date)
             else:
                 row['PERDIEM'] = rates[rate_date]
                 writer.writerow([row[field] for field in reader.fieldnames])  # + [rates[rate_date]])
-    print 'Wrong year: {} Non two table: {}'.format(non_year, non_twotable)
+    print('Wrong year: {} Non two table: {}'.format(non_year, non_twotable))
 
 
 def remove_completed(stay_csv, completed_csv, shared_id_field, output_csv):
@@ -441,7 +476,7 @@ def _combine_result_tables(result_folder, csv_tables, output_csv):
                 for row in reader:
                     total_rows += 1
                     writer.writerow(['\'' + v if v.startswith('00') else v for v in row])
-        print 'Total result rows:', total_rows
+        print('Total result rows:', total_rows)
 
 
 def check_utah_cities():
@@ -450,7 +485,7 @@ def check_utah_cities():
     perdiem_cities = {}
     with open(perdiem_csv, 'rb') as p_cities:
         reader = csv.DictReader(p_cities)
-        print reader.fieldnames
+        print(reader.fieldnames)
         for row in reader:
             perdiem_cities[row['CITY'].lower().strip()] = None
 
@@ -461,9 +496,9 @@ def check_utah_cities():
             utah_city = row['CITY'].lower().strip()
             if utah_city not in perdiem_cities:
                 if utah_city.replace('city', '').strip() not in perdiem_cities:
-                    # print utah_city
+                    # print(utah_city)
                     count += 1
-        print count
+        print(count)
 
 
 def _get_random_sample(records, n, skip_utah=False):
@@ -488,7 +523,7 @@ def _get_random_sample(records, n, skip_utah=False):
     while len(sample) <= n:
         try:
             id_num = random.randint(low_id, high_id)
-            print len(sample), record_ids[str(id_num)]
+            print(len(sample), record_ids[str(id_num)])
             sample.add(record_ids[str(id_num)])
 
         except KeyError:
@@ -500,7 +535,7 @@ def _get_random_sample(records, n, skip_utah=False):
 def run_table(data, year, output_csv):
     previous_tables = {}
     if os.path.exists(RATE_YEAR_PATHS[year]):
-        previous_tables = load_tables(RATE_YEAR_PATHS[year])
+        previous_tables = Gsa_Key_Rate.load_location_rates(RATE_YEAR_PATHS[year])
 
     get_records_from_table(data, previous_tables, year)
     get_records_from_lookup(data, previous_tables, output_csv, year)
@@ -519,13 +554,13 @@ def find_missing_records(stays, results):
             stay_ids.add(int(row['ROW_ID'].replace('\'', '')))
     for stay_id in stay_ids:
         if stay_id not in result_ids:
-            print 'missing stay', stay_id
+            print('missing stay', stay_id)
     for result_id in result_ids:
         if result_id not in stay_ids:
-            print 'result', result_id
+            print('result', result_id)
     print
-    print 'total results', len(result_ids)
-    print 'total stays', len(stay_ids)
+    print('total results', len(result_ids))
+    print('total stays', len(stay_ids))
 
 
 def combine_data_to_bq():
@@ -542,24 +577,24 @@ if __name__ == '__main__':
 
     output_suffix = year + '_' + quarter
     non_utah_output = 'results/non_utah_{}.csv'.format(output_suffix)
-    print '\n!!!!!US stays!!!!!!!'
+    print('\n!!!!!US stays!!!!!!!')
     run_table(data, year, non_utah_output)
     # Run utah_perdiems.py
     from utah_perdiem import create_rate_areas
     from utah_perdiem import get_rate_for_stays
     utah_perdiems_csv = r'stays/utah_perdiems.csv'
     utah_output = 'results/utah_{}.csv'.format(output_suffix)
-    print '\n!!!!!Utah Stays!!!!!!!'
+    print('\n!!!!!Utah Stays!!!!!!!')
     city_areas = create_rate_areas(utah_perdiems_csv)
     get_rate_for_stays(city_areas, data, utah_output)
     #
     # Combine non_utah and utah results
-    print '\n!!!!!Combine!!!!!!!'
+    print('\n!!!!!Combine!!!!!!!')
     result_folder = 'results'
     csv_tables = [non_utah_output, utah_output]
     combined_output = 'results/results_{}.csv'.format(output_suffix)
     _combine_result_tables(result_folder, csv_tables, combined_output)
-    print 'Results at {}'.format(combined_output)
+    print('Results at {}'.format(combined_output))
     find_missing_records(data, combined_output)
 
     # _get_random_sample(combined_output, 30)
