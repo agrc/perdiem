@@ -9,6 +9,7 @@ Hotel stay data is provided on a quarterly basis. It is loaded as a Sheet to a s
 2. Path to stay csv is provided when running perdiem.py
 3. perdiem.py will produce output csv with federal and state perdiem hotel rates added.
     * You can confirm non-Utah rates at [GSA perdiem lookup](https://www.gsa.gov/travel/plan-book/per-diem-rates/)
+    * Confirm Utah rate in [utah_rates.csv](utah_rates.csv)
 4. Output csv must be loaded to [results Drive folder](https://drive.google.com/drive/u/0/folders/142c6wNwX0UdFwFb7mO6kigticxzB2jyt)
     * Convert csv to Google sheet if it was not converted automatically.
 5. Confirm ARRAYFORMULA's in first row have evaluated.
@@ -16,4 +17,4 @@ Hotel stay data is provided on a quarterly basis. It is loaded as a Sheet to a s
 6. Email interested parties to notify results are ready.
 
 ### Yearly Process Update
-Every new Utah fiscal year Travel produces new Utah per diem rates. They will be provided be State Travel and must replace [utah_rates.csv]
+Every new Utah fiscal year Travel produces new Utah per diem rates. They will be provided by State Travel and must replace [utah_rates.csv](utah_rates.csv)

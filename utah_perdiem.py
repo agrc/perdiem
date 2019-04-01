@@ -5,6 +5,7 @@ from datetime import datetime
 
 
 class RateArea(object):
+    "Store rate information for Utah cities."
     Areas = {}
 
     def __init__(self, name):
@@ -86,9 +87,3 @@ def get_rate_for_stays(city_areas, stay_csv, output_csv):
         print('{} {}'.format(not_found_city, msg))
     print('Total not found:', not_found)
 
-
-if __name__ == '__main__':
-    perdiem_csv = r'stays/utah_perdiems.csv'
-    utah_stay_csv = r'stays/All_Stays_2018Q2.csv'
-    city_areas = create_rate_areas(perdiem_csv)
-    get_rate_for_stays(city_areas, utah_stay_csv, 'results/utah_2018_q2.csv')
