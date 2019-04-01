@@ -25,6 +25,10 @@ FEDERAL_FISCAL_YEARS = {
 
 GSA_MONTHS = list(calendar.month_abbr)[1:]
 
+DEFAULT_GSA_RECORDS = {
+    '2019': {'City': 'Standard Rate', 'Dec': '94', 'Feb': '94', 'Zip': '82930', 'Aug': '94', 'Sep': '94', 'Apr': '94', 'Jun': '94', 'State': 'UT', 'Jul': '94', 'Meals': '55', 'County': '', 'May': '94', 'DestinationID': '0', 'Mar': '94', 'Jan': '94', 'LocationDefined': '', 'Nov': '94', '_id': 59374, 'Oct': '94', 'FiscalYear': '2019'}
+}
+
 
 def fiscal_year_month_convertor(fiscal_year, month_abbr):
     """Convert federal fiscal year and 3 letter month to YYYY-MM format."""
@@ -193,6 +197,9 @@ def get_destination_rate(state, city, zipcode, fiscal_year):
         raise Exception(msg)
     records = gsa_response['result']['records']
     selected_record = select_rate(records, city)
+    if selected_record is None:
+        selected_record = DEFAULT_GSA_RECORDS[fiscal_year]
+        print('Using default record for: ', [state, city, zipcode, fiscal_year])
 
     table_record = Gsa_Destination_Rate.decode_api_record(selected_record)
     table_record.request_key = rate_key
@@ -329,23 +336,6 @@ def run_table(data, serialized_rates_json, output_csv):
     save_tables(Gsa_Destination_Rate.request_key_rates, rates_json)
 
 
-def remove_completed(stay_csv, completed_csv, shared_id_field, output_csv):
-    completed_ids = {}
-    with open(completed_csv) as completed:
-        completed_reader = csv.DictReader(completed)
-        for row in completed_reader:
-            completed_ids[row[shared_id_field].replace('`', '')] = None
-
-    with open(stay_csv, 'r') as stays, open(output_csv, 'w') as output:
-        reader = csv.DictReader(stays)
-        writer = csv.writer(output)
-        writer.writerow(reader.fieldnames)
-        for row in reader:
-            id_num = row[shared_id_field]
-            if id_num not in completed_ids:
-                writer.writerow([row[field] for field in reader.fieldnames])
-
-
 def _combine_result_tables(result_folder, csv_tables, output_csv):
     fields = None
     data_rows = 0
@@ -376,27 +366,6 @@ def _combine_result_tables(result_folder, csv_tables, output_csv):
                     total_rows += 1
                     writer.writerow(['\'' + v if v.startswith('00') else v for v in row])
         print('Total result rows:', total_rows)
-
-
-def check_utah_cities():
-    perdiem_csv = r'stays/utah_perdiems.csv'
-    utah_stay_csv = r'stays/utah_stays.csv'
-    perdiem_cities = {}
-    with open(perdiem_csv, 'r') as p_cities:
-        reader = csv.DictReader(p_cities)
-        print(reader.fieldnames)
-        for row in reader:
-            perdiem_cities[row['CITY'].lower().strip()] = None
-
-    with open(utah_stay_csv, 'r') as u_cities:
-        reader = csv.DictReader(u_cities)
-        count = 0
-        for row in reader:
-            utah_city = row['CITY'].lower().strip()
-            if utah_city not in perdiem_cities:
-                if utah_city.replace('city', '').strip() not in perdiem_cities:
-                    count += 1
-        print(count)
 
 
 def _get_random_sample(records, n, skip_utah=False):
@@ -452,18 +421,12 @@ def find_missing_records(stays, results):
     print('total stays', len(stay_ids))
 
 
-def combine_data_to_bq():
-    tables = [
-        ('results/non_utah_2015.csv', 'results/non_utah_2015.csv')
-    ]
-
-
 if __name__ == '__main__':
     """Currently uses web-scraping3 python virtual env"""
-    data = 'stays/All_Stays_2019Q1.csv'
+    data = 'stays/All_Stays_2019Q2.csv'
     # Year and quarter for output file naming
     utah_fiscal_year = '2019'
-    quarter = 'q1'
+    quarter = 'q2'
 
     output_suffix = utah_fiscal_year + '_' + quarter
     non_utah_output = 'results/non_utah_{}.csv'.format(output_suffix)
@@ -490,6 +453,8 @@ if __name__ == '__main__':
     find_missing_records(data, combined_output)
 
     # Get a random sample of record for verification.
+    print()
+    print('----Verification random sample----')
     sample = _get_random_sample(combined_output, 10, skip_utah=False)
     for rate in sample:
         print(rate)
