@@ -1,0 +1,1 @@
+Folder to store the stay data as it is produced by state travel.

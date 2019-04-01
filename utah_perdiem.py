@@ -24,28 +24,6 @@ class RateArea(object):
         return None
 
 
-def check_utah_cities():
-    perdiem_csv = r'stays/utah_perdiems.csv'
-    utah_stay_csv = r'stays/utah_stays.csv'
-    perdiem_cities = {}
-    with open(perdiem_csv, 'r') as p_cities:
-        reader = csv.DictReader(p_cities)
-        print(reader.fieldnames)
-        for row in reader:
-            perdiem_cities[row['CITY'].lower().strip()] = None
-
-    with open(utah_stay_csv, 'r') as u_cities:
-        reader = csv.DictReader(u_cities)
-        count = 0
-        for row in reader:
-            utah_city = row['CITY'].lower().strip()
-            if utah_city not in perdiem_cities:
-                if utah_city.replace('city', '').strip() not in perdiem_cities:
-                    # print(utah_city)
-                    count += 1
-        print(count)
-
-
 def create_rate_areas(perdiem_csv):
     """
     Create city rate areas and add rate date ranges.
@@ -104,7 +82,7 @@ def get_rate_for_stays(city_areas, stay_csv, output_csv):
                     row['PERDIEM'] = int(float(rate))
                     writer.writerow([row[field] for field in reader.fieldnames])
 
-    for not_found_city, msg in not_found_cities.items():
+    for not_found_city, msg in not_found_cities.items():  # cities not found in Utah rates. All not found are Utah default rate.
         print('{} {}'.format(not_found_city, msg))
     print('Total not found:', not_found)
 

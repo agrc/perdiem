@@ -9,13 +9,14 @@ import time
 import os
 import calendar
 
-RATE_LIMIT_SECONDS = (0.1, 0.2)
+RATE_LIMIT_SECONDS = (0.1, 0.2)  # average request rate to GSA will be uniformly distributed between these times
 
 ZIP_PLUS4_MATCHER = re.compile(r'\d{5}($|(-\d{4}))')
 
 RATE_DATE_FORMAT = '%Y-%m'
 
-FEDERAL_FISCAL_YEARS = {
+FEDERAL_FISCAL_YEARS = {  # add new fiscal years in the future. 
+    '2020': (datetime.strptime('10/01/2019', '%m/%d/%Y'), datetime.strptime('9/30/2020', '%m/%d/%Y')),
     '2019': (datetime.strptime('10/01/2018', '%m/%d/%Y'), datetime.strptime('9/30/2019', '%m/%d/%Y')),
     '2018': (datetime.strptime('10/01/2017', '%m/%d/%Y'), datetime.strptime('9/30/2018', '%m/%d/%Y')),
     '2017': (datetime.strptime('10/01/2016', '%m/%d/%Y'), datetime.strptime('9/30/2017', '%m/%d/%Y')),
@@ -25,7 +26,7 @@ FEDERAL_FISCAL_YEARS = {
 
 GSA_MONTHS = list(calendar.month_abbr)[1:]
 
-DEFAULT_GSA_RECORDS = {
+DEFAULT_GSA_RECORDS = {  # This is the standard GSA rate and may change each fiscal year.
     '2019': {'City': 'Standard Rate', 'Dec': '94', 'Feb': '94', 'Zip': '82930', 'Aug': '94', 'Sep': '94', 'Apr': '94', 'Jun': '94', 'State': 'UT', 'Jul': '94', 'Meals': '55', 'County': '', 'May': '94', 'DestinationID': '0', 'Mar': '94', 'Jan': '94', 'LocationDefined': '', 'Nov': '94', '_id': 59374, 'Oct': '94', 'FiscalYear': '2019'}
 }
 
@@ -86,15 +87,8 @@ class Gsa_Destination_Rate(object):
             raise TypeError('Object of type {} is not JSON serializable'.format(type_name))
 
     @staticmethod
-    def decode_gsa_rate(dct):
-        """Decode stored GSA rates for locations."""
-        if 'county' in dct:
-            return Gsa_Destination_Rate(dct['county'], dct['destination'], dct['rates'])
-        return dct
-
-    @staticmethod
     def decode_api_record(record):
-        """Decode GSA rates for from API response record."""
+        """Decode GSA rates from API response record."""
         fiscal_year = record['FiscalYear']
         rates = {fiscal_year_month_convertor(fiscal_year, key): int(record[key]) for key in record if key in GSA_MONTHS}
         gsa_rate = Gsa_Destination_Rate(record['City'],
@@ -107,16 +101,9 @@ class Gsa_Destination_Rate(object):
 
         return gsa_rate
 
-    @staticmethod
-    def load_location_rates(json_path):
-        """Load GSA location rates into an object."""
-        with open(json_path, 'r') as json_file:
-            rate_tables = json.load(json_file, object_hook=Gsa_Destination_Rate.decode_gsa_rate)
-
-        return rate_tables
-
 
 def save_tables(destination_rates, json_path):
+    """Cache rates for a destination as they are returned from the GSA API."""
     with open(json_path, 'w') as f_out:
         f_out.write(json.dumps(destination_rates, sort_keys=True, indent=4, default=Gsa_Destination_Rate.encode_destination))
 
@@ -185,7 +172,6 @@ def get_destination_rate(state, city, zipcode, fiscal_year):
     """Get GSA rates for a destination."""
     rate_key = get_rate_key(fiscal_year, zipcode, state)
     if rate_key in Gsa_Destination_Rate.request_key_rates:
-        # print('json')
         return Gsa_Destination_Rate.request_key_rates[rate_key]
 
     time.sleep(random.uniform(RATE_LIMIT_SECONDS[0], RATE_LIMIT_SECONDS[1]))
@@ -301,7 +287,7 @@ def add_perdiem_from_gsa(data, output_csv):
                                                   row['ZIP_CODE'].strip(),
                                                   row['CHECKIN_DATE'].strip())
             try:
-                if state == 'UT':
+                if state == 'UT':  # Utah stays are run on separate utah specific rates. 
                     continue
 
             except KeyError:
@@ -320,7 +306,7 @@ def add_perdiem_from_gsa(data, output_csv):
             destination = get_destination_rate(state, city, zipcode, fiscal_year)
             rate_date = datetime.strftime(datetime.strptime(checkin_date, date_string), RATE_DATE_FORMAT)
             row['PERDIEM'] = destination.rates[rate_date]
-            writer.writerow([row[field] for field in reader.fieldnames])
+            writer.writerow([row[field] for field in reader.fieldnames])  # write result row
 
 
 def run_table(data, serialized_rates_json, output_csv):

@@ -1,0 +1,1 @@
+Folder to store result csvs with perdiem rates added.
