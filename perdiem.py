@@ -15,7 +15,7 @@ ZIP_PLUS4_MATCHER = re.compile(r'\d{5}($|(-\d{4}))')
 
 RATE_DATE_FORMAT = '%Y-%m'
 
-FEDERAL_FISCAL_YEARS = {  # add new fiscal years in the future. 
+FEDERAL_FISCAL_YEARS = {  # add new fiscal years in the future.
     '2020': (datetime.strptime('10/01/2019', '%m/%d/%Y'), datetime.strptime('9/30/2020', '%m/%d/%Y')),
     '2019': (datetime.strptime('10/01/2018', '%m/%d/%Y'), datetime.strptime('9/30/2019', '%m/%d/%Y')),
     '2018': (datetime.strptime('10/01/2017', '%m/%d/%Y'), datetime.strptime('9/30/2018', '%m/%d/%Y')),
@@ -27,7 +27,7 @@ FEDERAL_FISCAL_YEARS = {  # add new fiscal years in the future.
 GSA_MONTHS = list(calendar.month_abbr)[1:]
 
 DEFAULT_GSA_RECORDS = {  # This is the standard GSA rate and may change each fiscal year.
-    '2019': {'City': 'Standard Rate', 'Dec': '94', 'Feb': '94', 'Zip': '82930', 'Aug': '94', 'Sep': '94', 'Apr': '94', 'Jun': '94', 'State': 'UT', 'Jul': '94', 'Meals': '55', 'County': '', 'May': '94', 'DestinationID': '0', 'Mar': '94', 'Jan': '94', 'LocationDefined': '', 'Nov': '94', '_id': 59374, 'Oct': '94', 'FiscalYear': '2019'}
+    '2020': {'City': 'Standard Rate', 'Dec': '94', 'Feb': '94', 'Zip': '82930', 'Aug': '94', 'Sep': '94', 'Apr': '94', 'Jun': '94', 'State': 'UT', 'Jul': '94', 'Meals': '55', 'County': '', 'May': '94', 'DestinationID': '0', 'Mar': '94', 'Jan': '94', 'LocationDefined': '', 'Nov': '94', '_id': 59374, 'Oct': '94', 'FiscalYear': '2020'}
 }
 
 
@@ -124,10 +124,9 @@ def get_rate_key(fiscal_year, zipcode, state):
     return rate_key
 
 
-def select_rate(records, city):
+def select_rate(records, city):   #def select_rate(records, city)
     """
     Select rate from GSA records.
-
     Selected from city name match first.
     Selected from highest summed rates second.
     """
@@ -150,16 +149,12 @@ def select_rate(records, city):
 def request_gsa_destination(state, city, zipcode, fiscal_year):
     """
     Make a request to the GSA API.
-
     GSA API doc: https://www.gsa.gov/technology/government-it-initiatives/digital-strategy/per-diem-apis/per-diem-api
     """
-    gsa_url = "https://inventory.data.gov/api/action/datastore_search"
-    payload = {
-        'resource_id': '8ea44bc4-22ba-4386-b84c-1494ab28964b',
-        'limit': 20,
-        'filters': '{{"FiscalYear":"{}","Zip":"{}","State":"{}"}}'.format(fiscal_year, zipcode, state),
-    }
-    r = requests.get(gsa_url, params=payload)
+    gsa_url = f'https://api.gsa.gov/travel/perdiem/v2/rates/zip/{zipcode}/year/{fiscal_year}'     #old url"https://inventory.data.gov/api/action/datastore_search"
+    headers = {'x-api-key':'zoXm1gdyKjNAr6SIIJnd42u9ZvVbNSZvuPTmW1zV'}
+
+    r = requests.get(gsa_url, headers=headers)
     if r.status_code >= 500:
         return None
     elif r.status_code >= 400 and r.status_code < 500:
@@ -167,6 +162,18 @@ def request_gsa_destination(state, city, zipcode, fiscal_year):
         raise Exception(msg)
     return r.json()
 
+def modify_gsa_response(gsa_records_raw, state, city, zipcode, fiscal_year):
+    modified_gsa = {}
+
+    for r in gsa_records_raw:
+        modified_gsa[r['short']] = r['value']
+    modified_gsa['State'] = state
+    modified_gsa['City'] = city
+    modified_gsa['DestinationID'] = ''
+    modified_gsa['Zip'] = zipcode
+    modified_gsa['FiscalYear'] = fiscal_year
+    modified_gsa['County'] = ''
+    return modified_gsa
 
 def get_destination_rate(state, city, zipcode, fiscal_year):
     """Get GSA rates for a destination."""
@@ -176,12 +183,18 @@ def get_destination_rate(state, city, zipcode, fiscal_year):
 
     time.sleep(random.uniform(RATE_LIMIT_SECONDS[0], RATE_LIMIT_SECONDS[1]))
     gsa_response = request_gsa_destination(state, city, zipcode, fiscal_year)
-    print('req')
-    if 'result' not in gsa_response:
-        print('result not in dct')
+
+    if 'rates' not in gsa_response:
+        print('rates not in dct')
         msg = 'Bad GSA response for params: {}'.format([state, city, zipcode, fiscal_year])
         raise Exception(msg)
-    records = gsa_response['result']['records']
+    if len(gsa_response['rates']) < 1:
+        print('no rates returned')
+        msg = f'No GSA rates returned: {zipcode} {fiscal_year}'
+        raise Exception(msg)
+    records_raw = gsa_response['rates'][0]['rate'][0]['months']['month']
+    records = [modify_gsa_response(records_raw, state, city, zipcode, fiscal_year)]
+
     selected_record = select_rate(records, city)
     if selected_record is None:
         selected_record = DEFAULT_GSA_RECORDS[fiscal_year]
@@ -271,7 +284,7 @@ def lookup_state(state):
 def add_perdiem_from_gsa(data, output_csv):
     """Add GSA perdiem to hotel stays for non-Utah data."""
     date_string = '%m/%d/%Y'
-    with open(data, 'r') as stays, open(output_csv, 'w') as output:
+    with open(data, 'r') as stays, open(output_csv, 'w', newline='') as output:
         reader = csv.DictReader(stays)
         writer = csv.writer(output)
         if 'PERDIEM' not in reader.fieldnames:
@@ -286,8 +299,9 @@ def add_perdiem_from_gsa(data, output_csv):
                                                   row['CITY'].strip(),
                                                   row['ZIP_CODE'].strip(),
                                                   row['CHECKIN_DATE'].strip())
+            print(id_num)
             try:
-                if state == 'UT':  # Utah stays are run on separate utah specific rates. 
+                if state == 'UT':  # Utah stays are run on separate utah specific rates.
                     continue
 
             except KeyError:
@@ -302,8 +316,11 @@ def add_perdiem_from_gsa(data, output_csv):
 
             if ZIP_PLUS4_MATCHER.match(zipcode) is not None:
                 zipcode = zipcode.split('-')[0].strip()
-
-            destination = get_destination_rate(state, city, zipcode, fiscal_year)
+            try:
+                destination = get_destination_rate(state, city, zipcode, fiscal_year)
+            except Exception as e:
+                print(e)
+                continue
             rate_date = datetime.strftime(datetime.strptime(checkin_date, date_string), RATE_DATE_FORMAT)
             row['PERDIEM'] = destination.rates[rate_date]
             writer.writerow([row[field] for field in reader.fieldnames])  # write result row
@@ -331,7 +348,7 @@ def _combine_result_tables(result_folder, csv_tables, output_csv):
         for row in reader:
             data_rows += 1
 
-    with open(output_csv, 'w') as output:
+    with open(output_csv, 'w', newline='') as output:
         writer = csv.writer(output, quoting=csv.QUOTE_ALL)
         writer.writerow(fields)
         total_rows = 0
@@ -342,9 +359,9 @@ def _combine_result_tables(result_folder, csv_tables, output_csv):
                 # add arrayformulas into first data row for google sheet
                 if total_rows == 0:
                     first_data_row = next(reader)
-                    first_data_row[-4] = '=ARRAYFORMULA(If(ISBLANK($S2:$S),"", $R2:$R-$S2:$S))'
-                    first_data_row[-3] = '=ARRAYFORMULA(TO_PERCENT(If(ISBLANK($S2:$S),"", $T2:$T/$S2:$S)))'
-                    first_data_row[-2] = '=ARRAYFORMULA(If(ISBLANK($S2:$S),"", $T2:$T*$Q2:$Q))'
+                    first_data_row[-5] = '=ARRAYFORMULA(If(ISBLANK($S2:$S),"", $R2:$R-$S2:$S))'
+                    first_data_row[-4] = '=ARRAYFORMULA(TO_PERCENT(If(ISBLANK($S2:$S),"", $T2:$T/$S2:$S)))'
+                    first_data_row[-3] = '=ARRAYFORMULA(If(ISBLANK($S2:$S),"", $T2:$T*$Q2:$Q))'
                     writer.writerow(['\'' + v if v.startswith('00') else v for v in first_data_row])
                     total_rows += 1
 
@@ -409,10 +426,10 @@ def find_missing_records(stays, results):
 
 if __name__ == '__main__':
     """Currently uses web-scraping3 python virtual env"""
-    data = 'stays/All_Stays_2019Q2.csv'
+    data = 'stays/All_Stays_2020Q3.csv'
     # Year and quarter for output file naming
-    utah_fiscal_year = '2019'
-    quarter = 'q2'
+    utah_fiscal_year = '2020'
+    quarter = 'q3'
 
     output_suffix = utah_fiscal_year + '_' + quarter
     non_utah_output = 'results/non_utah_{}.csv'.format(output_suffix)

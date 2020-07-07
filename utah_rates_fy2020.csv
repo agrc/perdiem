@@ -1,0 +1,71 @@
+STATE,CITY,COUNTY,BEG_DATE,END_DATE,RATE
+UT,All Other Utah Cities,,7/1/2019,6/30/2020,$70.00 
+UT,Alta,Salt Lake ,7/1/2019,6/30/2020,$100.00 
+UT,American Fork,Utah,7/1/2019,6/30/2020,$85.00 
+UT,Ballard,Uintah,7/1/2019,6/30/2020,$90.00 
+UT,Beaver,Beaver,7/1/2019,6/30/2020,$75.00 
+UT,Blanding,San Juan ,7/1/2019,6/30/2020,$75.00 
+UT,Bluff,San Juan ,7/1/2019,6/30/2020,$95.00 
+UT,Bountiful,Davis,7/1/2019,6/30/2020,$100.00 
+UT,Brigham City,Box Elder,7/1/2019,6/30/2020,$80.00 
+UT,Bryce,Garfield,7/1/2019,6/30/2020,$80.00 
+UT,Bryce Canyon City,Garfield,7/1/2019,6/30/2020,$80.00 
+UT,Cedar City,Iron,7/1/2019,6/30/2020,$80.00 
+UT,Centerville,Davis,7/1/2019,6/30/2020,$100.00 
+UT,Copperton,Salt Lake ,7/1/2019,6/30/2020,$100.00 
+UT,Cottonwood Heights,Salt Lake ,7/1/2019,6/30/2020,$100.00 
+UT,Draper,Salt Lake ,7/1/2019,6/30/2020,$100.00 
+UT,Duchesne,Duchesne,7/1/2019,6/30/2020,$90.00 
+UT,Emigration Canyon,Salt Lake ,7/1/2019,6/30/2020,$100.00 
+UT,Ephraim,Sanpete,7/1/2019,6/30/2020,$80.00 
+UT,Farmington,Davis,7/1/2019,6/30/2020,$90.00 
+UT,Fillmore,Millard,7/1/2019,6/30/2020,$80.00 
+UT,Garden City,Rich,7/1/2019,6/30/2020,$80.00 
+UT,Green River,Emery,7/1/2019,6/30/2020,$110.00 
+UT,Hanksville,Wayne  ,7/1/2019,6/30/2020,$85.00 
+UT,Heber,Wasatch,7/1/2019,6/30/2020,$85.00 
+UT,Herriman,Salt Lake ,7/1/2019,6/30/2020,$100.00 
+UT,Holladay,Salt Lake ,7/1/2019,6/30/2020,$100.00 
+UT,Hurricane,Washington,7/1/2019,6/30/2020,$85.00 
+UT,Kanab,Kane,7/1/2019,6/30/2020,$90.00 
+UT,Kearns,Salt Lake ,7/1/2019,6/30/2020,$100.00 
+UT,La Verkin,Washington,7/1/2019,6/30/2020,$85.00 
+UT,Layton,Davis,7/1/2019,6/30/2020,$90.00 
+UT,Lehi,Utah,7/1/2019,6/30/2020,$85.00 
+UT,Logan,Cache,7/1/2019,6/30/2020,$85.00 
+UT,Magna,Salt Lake ,7/1/2019,6/30/2020,$100.00 
+UT,Mexican Hat,San Juan ,7/1/2019,6/30/2020,$90.00 
+UT,Midvale,Salt Lake ,7/1/2019,6/30/2020,$100.00 
+UT,Midway,Wasatch,7/1/2019,6/30/2020,$110.00 
+UT,Millcreek,Salt Lake ,7/1/2019,6/30/2020,$100.00 
+UT,Moab,Grand,7/1/2019,6/30/2020,$110.00 
+UT,Monticello,San Juan ,7/1/2019,6/30/2020,$80.00 
+UT,Murray,Salt Lake ,7/1/2019,6/30/2020,$100.00 
+UT,North Salt Lake,Davis,7/1/2019,6/30/2020,$100.00 
+UT,Ogden,Weber,7/1/2019,6/30/2020,$90.00 
+UT,Orem,Utah,7/1/2019,6/30/2020,$85.00 
+UT,Panguitch,Garfield,7/1/2019,6/30/2020,$75.00 
+UT,Park City,Summit,7/1/2019,6/30/2020,$110.00 
+UT,Price,Carbon,7/1/2019,6/30/2020,$75.00 
+UT,Provo,Utah,7/1/2019,6/30/2020,$85.00 
+UT,Riverton,Salt Lake ,7/1/2019,6/30/2020,$100.00 
+UT,Roosevelt,Duchesne,7/1/2019,6/30/2020,$90.00 
+UT,Salt Lake City,Salt Lake ,7/1/2019,6/30/2020,$100.00 
+UT,Sandy,Salt Lake ,7/1/2019,6/30/2020,$100.00 
+UT,Snowbird,Salt Lake ,7/1/2019,6/30/2020,$100.00 
+UT,South Jordan,Salt Lake ,7/1/2019,6/30/2020,$100.00 
+UT,South Salt Lake,Salt Lake ,7/1/2019,6/30/2020,$100.00 
+UT,Springdale,Washington,7/1/2019,6/30/2020,$85.00 
+UT,Springville,Utah,7/1/2019,6/30/2020,$85.00 
+UT,St George,Washington,7/1/2019,6/30/2020,$85.00 
+UT,Taylorsville,Salt Lake ,7/1/2019,6/30/2020,$100.00 
+UT,Tooele,Tooele,7/1/2019,6/30/2020,$100.00 
+UT,Torrey,Wayne  ,7/1/2019,6/30/2020,$90.00 
+UT,Tremonton,Box Elder,7/1/2019,6/30/2020,$90.00 
+UT,Vernal,Uintah,7/1/2019,6/30/2020,$95.00 
+UT,Washington,Washington,7/1/2019,6/30/2020,$85.00 
+UT,West Bountiful,Davis,7/1/2019,6/30/2020,$100.00 
+UT,West Jordan,Salt Lake ,7/1/2019,6/30/2020,$100.00 
+UT,West Valley City,Salt Lake ,7/1/2019,6/30/2020,$100.00 
+UT,White City,Salt Lake ,7/1/2019,6/30/2020,$100.00 
+UT,Woods Cross,Davis,7/1/2019,6/30/2020,$100.00 

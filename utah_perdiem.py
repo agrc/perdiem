@@ -54,7 +54,7 @@ def get_rate_for_stays(city_areas, stay_csv, output_csv):
     not_found = 0
     not_found_cities = {}
     default_rate = 70  # This value can change each new fiscal year and can be found in rates csv.
-    with open(stay_csv, 'r') as stays, open(output_csv, 'w') as output:
+    with open(stay_csv, 'r') as stays, open(output_csv, 'w', newline='') as output:
         reader = csv.DictReader(stays)
         writer = csv.writer(output)
         if 'PERDIEM' not in reader.fieldnames:
